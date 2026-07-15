@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}공부방 - 영단어 공부방{% endblock %}
+
+{% block content %}
+<div class="hero">
+  <h1>영단어 공부방에 오신걸 환영합니다!</h1>
+  <p>단어를 추가하고, 퀴즈로 실력을 키워보세요.</p>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-number">{{ total_words }}</div>
+    <div class="stat-label">등록된 단어</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-number">{{ total_studied }}</div>
+    <div class="stat-label">총 학습 횟수</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-number">{{ accuracy }}%</div>
+    <div class="stat-label">정답률</div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-header">
+    <h2>Lesson</h2>
+    <a href="{{ url_for('lessons') }}" class="btn btn-outline">Lesson 관리</a>
+  </div>
+  {% if lessons %}
+  <div class="lesson-grid">
+    {% for lesson in lessons %}
+    <a href="{{ url_for('lesson_detail', lesson_id=lesson.id) }}" class="lesson-card lesson-card-link">
+      <div class="lesson-card-name">{{ lesson.name }}</div>
+      <div class="lesson-card-count">{{ lesson.word_count }}개 단어</div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <p>아직 Lesson이 없습니다. <a href="{{ url_for('lessons') }}">Lesson을 추가해보세요!</a></p>
+  </div>
+  {% endif %}
+</div>
+
+<div class="section">
+  <div class="section-header">
+    <h2>최근 추가된 단어</h2>
+    <a href="{{ url_for('wordlist') }}" class="btn btn-outline">전체 보기</a>
+  </div>
+  {% if recent_words %}
+  <table class="table">
+    <thead>
+      <tr><th>단어</th><th>뜻</th></tr>
+    </thead>
+    <tbody>
+      {% for w in recent_words %}
+      <tr>
+        <td><strong>{{ w.word }}</strong> <button type="button" class="btn-speak" onclick="speak('{{ w.word }}')" title="발음 듣기">🔊</button></td>
+        <td>{{ w.meaning }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty-state">
+    <p>아직 단어가 없습니다. <a href="{{ url_for('add_word') }}">단어를 추가해보세요!</a></p>
+  </div>
+  {% endif %}
+</div>
+
+<div class="quick-actions">
+  <a href="{{ url_for('add_word') }}" class="btn btn-primary">+ 단어 추가</a>
+  <a href="{{ url_for('quiz') }}" class="btn btn-success">퀴즈 시작</a>
+</div>
+{% endblock %}

@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}단어장 - 영단어 공부방{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>단어장</h1>
+  <a href="{{ url_for('add_word') }}" class="btn btn-primary">+ 단어 추가</a>
+</div>
+
+<div class="filter-bar">
+  <form method="get" class="filter-form">
+    <input type="text" name="search" value="{{ search }}" placeholder="단어 또는 뜻 검색..." class="input">
+    <button type="submit" class="btn btn-outline">검색</button>
+    <a href="{{ url_for('wordlist') }}" class="btn btn-ghost">초기화</a>
+  </form>
+</div>
+
+{% if words %}
+<form id="bulkDeleteForm" method="post" action="{{ url_for('bulk_delete_words') }}"
+      onsubmit="return confirm('선택한 단어를 삭제할까요?')"></form>
+
+<div class="word-count">
+  총 {{ words|length }}개 단어
+  <button type="submit" form="bulkDeleteForm" class="btn btn-sm btn-danger">선택 삭제</button>
+</div>
+<div class="table-responsive">
+<table class="table">
+  <thead>
+    <tr>
+      <th><input type="checkbox" onclick="toggleAllWords(this)"></th>
+      <th>단어</th>
+      <th>뜻</th>
+      <th class="col-example">예문</th>
+      <th>관리</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for w in words %}
+    <tr>
+      <td><input type="checkbox" name="word_ids" value="{{ w.id }}" form="bulkDeleteForm"></td>
+      <td><strong>{{ w.word }}</strong> <button type="button" class="btn-speak" onclick="speak('{{ w.word }}')" title="발음 듣기">🔊</button></td>
+      <td>{{ w.meaning }}</td>
+      <td class="example col-example">{{ w.example_sentence or '-' }}</td>
+      <td class="actions">
+        <a href="{{ url_for('edit_word', word_id=w.id) }}" class="btn btn-sm btn-outline">수정</a>
+        <form method="post" action="{{ url_for('delete_word', word_id=w.id) }}"
+              onsubmit="return confirm('정말 삭제할까요?')" style="display:inline">
+          <button type="submit" class="btn btn-sm btn-danger">삭제</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% else %}
+<div class="empty-state">
+  <p>단어가 없습니다. <a href="{{ url_for('add_word') }}">첫 단어를 추가해보세요!</a></p>
+</div>
+{% endif %}
+{% endblock %}

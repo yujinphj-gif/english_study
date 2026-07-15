@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}단어 수정 - 영단어 공부방{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>단어 수정</h1>
+</div>
+
+<div class="form-card">
+  <form method="post">
+    <div class="form-group">
+      <label>영단어 *</label>
+      <div style="display:flex;gap:0.5rem">
+        <input type="text" name="word" id="wordInput" class="input" value="{{ word.word }}" required>
+        <button type="button" class="btn btn-outline" id="autoFillBtn" style="white-space:nowrap"
+                onclick="autoFillMeaning('wordInput', 'meaningInput', 'exampleInput', 'autoFillBtn')">자동 채우기</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>뜻 *</label>
+      <input type="text" name="meaning" id="meaningInput" class="input" value="{{ word.meaning }}" required>
+    </div>
+    <div class="form-group">
+      <label>예문</label>
+      <textarea name="example" id="exampleInput" class="textarea">{{ word.example_sentence or '' }}</textarea>
+    </div>
+    <div class="form-group">
+      <label>Lesson</label>
+      <select name="lesson_id" class="select">
+        <option value="">미지정</option>
+        {% for lesson in lessons %}
+        <option value="{{ lesson.id }}" {% if word.lesson_id == lesson.id %}selected{% endif %}>
+          {{ lesson.name }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">저장하기</button>
+      <a href="{{ url_for('wordlist') }}" class="btn btn-ghost">취소</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

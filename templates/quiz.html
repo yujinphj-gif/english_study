@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}퀴즈 - 영단어 공부방{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>퀴즈</h1>
+</div>
+
+{% if word_count == 0 %}
+<div class="empty-state">
+  <p>퀴즈를 위한 단어가 없습니다. <a href="{{ url_for('add_word') }}">단어를 추가해보세요!</a></p>
+</div>
+{% else %}
+
+<div class="quiz-filter">
+  <label>Lesson 선택:</label>
+  <select id="quizLesson" class="select" style="width:auto">
+    <option value="">전체</option>
+    {% for lesson in lessons %}
+    <option value="{{ lesson.id }}">{{ lesson.name }}</option>
+    {% endfor %}
+  </select>
+</div>
+
+<div class="quiz-box" id="quizBox">
+  <div id="quizStatus" class="quiz-status">
+    <span>정답: <strong id="correctCount">0</strong></span>
+    <span>오답: <strong id="wrongCount">0</strong></span>
+    <span>연속: <strong id="streakCount">0</strong>🔥</span>
+  </div>
+
+  <div id="wordDisplay" class="word-display">
+    <div class="word-text" id="wordText">-</div>
+    <button type="button" class="btn-speak" id="speakBtn" title="발음 듣기" onclick="speak(currentWord && currentWord.word)" style="display:none">🔊</button>
+  </div>
+
+  <div id="choicesArea" class="choices-area"></div>
+
+  <div id="resultArea" class="result-area" style="display:none">
+    <div id="resultMsg" class="result-msg"></div>
+    <div id="exampleArea" class="example-text"></div>
+    <button id="nextBtn" class="btn btn-primary" onclick="loadNextWord()">다음 단어 →</button>
+  </div>
+
+  <div id="startArea" style="text-align:center;padding:2rem">
+    <button class="btn btn-success" onclick="loadNextWord()">퀴즈 시작!</button>
+  </div>
+</div>
+
+<script>
+  let currentWord = null;
+  let correct = 0, wrong = 0, streak = 0;
+
+  async function loadNextWord() {
+    document.getElementById('startArea').style.display = 'none';
+    document.getElementById('resultArea').style.display = 'none';
+    document.getElementById('choicesArea').innerHTML = '<div class="loading">로딩 중...</div>';
+
+    const lessonId = document.getElementById('quizLesson').value;
+    const res = await fetch(`/quiz/next?lesson_id=${encodeURIComponent(lessonId)}`);
+    const data = await res.json();
+
+    if (data.error) {
+      document.getElementById('choicesArea').innerHTML =
+        `<p class="empty-state">${data.error}</p>`;
+      return;
+    }
+
+    currentWord = data;
+    document.getElementById('wordText').textContent = data.word;
+    document.getElementById('speakBtn').style.display = 'inline-block';
+    speak(data.word);
+
+    const area = document.getElementById('choicesArea');
+    area.innerHTML = '';
+    data.choices.forEach(choice => {
+      const btn = document.createElement('button');
+      btn.className = 'choice-btn';
+      btn.textContent = choice;
+      btn.onclick = () => selectAnswer(choice, btn);
+      area.appendChild(btn);
+    });
+  }
+
+  async function selectAnswer(selected, btn) {
+    const allBtns = document.querySelectorAll('.choice-btn');
+    allBtns.forEach(b => b.disabled = true);
+
+    const isCorrect = selected === currentWord.meaning;
+    btn.classList.add(isCorrect ? 'correct' : 'wrong');
+
+    if (!isCorrect) {
+      allBtns.forEach(b => {
+        if (b.textContent === currentWord.meaning) b.classList.add('correct');
+      });
+    }
+
+    if (isCorrect) {
+      correct++;
+      streak++;
+      document.getElementById('resultMsg').innerHTML = '✅ 정답입니다!';
+      document.getElementById('resultMsg').className = 'result-msg correct-msg';
+    } else {
+      wrong++;
+      streak = 0;
+      document.getElementById('resultMsg').innerHTML =
+        `❌ 오답! 정답: <strong>${currentWord.meaning}</strong>`;
+      document.getElementById('resultMsg').className = 'result-msg wrong-msg';
+    }
+
+    if (currentWord.example) {
+      document.getElementById('exampleArea').textContent = '예문: ' + currentWord.example;
+    } else {
+      document.getElementById('exampleArea').textContent = '';
+    }
+
+    document.getElementById('correctCount').textContent = correct;
+    document.getElementById('wrongCount').textContent = wrong;
+    document.getElementById('streakCount').textContent = streak;
+    document.getElementById('resultArea').style.display = 'block';
+
+    await fetch('/quiz/submit', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({word_id: currentWord.id, is_correct: isCorrect})
+    });
+  }
+
+  document.getElementById('quizLesson').addEventListener('change', () => {
+    correct = 0; wrong = 0; streak = 0;
+    document.getElementById('correctCount').textContent = 0;
+    document.getElementById('wrongCount').textContent = 0;
+    document.getElementById('streakCount').textContent = 0;
+    document.getElementById('resultArea').style.display = 'none';
+    document.getElementById('choicesArea').innerHTML = '';
+    document.getElementById('wordText').textContent = '-';
+    document.getElementById('speakBtn').style.display = 'none';
+    document.getElementById('startArea').style.display = 'block';
+  });
+</script>
+{% endif %}
+{% endblock %}

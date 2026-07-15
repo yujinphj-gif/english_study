@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}{{ lesson.name }} - 영단어 공부방{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>{{ lesson.name }}</h1>
+  <a href="{{ url_for('add_word', lesson_id=lesson.id) }}" class="btn btn-primary">+ 이 Lesson에 단어 추가</a>
+</div>
+
+{% if words %}
+<div class="word-count">총 {{ words|length }}개 단어</div>
+<div class="table-responsive">
+<table class="table">
+  <thead>
+    <tr>
+      <th>단어</th>
+      <th>뜻</th>
+      <th class="col-example">예문</th>
+      <th>관리</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for w in words %}
+    <tr>
+      <td><strong>{{ w.word }}</strong> <button type="button" class="btn-speak" onclick="speak('{{ w.word }}')" title="발음 듣기">🔊</button></td>
+      <td>{{ w.meaning }}</td>
+      <td class="example col-example">{{ w.example_sentence or '-' }}</td>
+      <td class="actions">
+        <a href="{{ url_for('edit_word', word_id=w.id) }}" class="btn btn-sm btn-outline">수정</a>
+        <form method="post" action="{{ url_for('delete_word', word_id=w.id) }}"
+              onsubmit="return confirm('정말 삭제할까요?')" style="display:inline">
+          <button type="submit" class="btn btn-sm btn-danger">삭제</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% else %}
+<div class="empty-state">
+  <p>이 Lesson에 단어가 없습니다. <a href="{{ url_for('add_word', lesson_id=lesson.id) }}">첫 단어를 추가해보세요!</a></p>
+</div>
+{% endif %}
+
+<div class="quick-actions">
+  <a href="{{ url_for('lessons') }}" class="btn btn-ghost">Lesson 목록으로</a>
+</div>
+{% endblock %}

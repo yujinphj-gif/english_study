@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>영단어 공부방</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="cover">
+    <div class="cover-emoji">📚</div>
+    <h1 class="cover-title">영단어 공부방</h1>
+    <p class="cover-subtitle">단어를 외우고, 퀴즈로 실력을 확인해보세요</p>
+    <a href="{{ url_for('room') }}" class="btn btn-primary cover-enter">공부방 입장하기</a>
+  </div>
+</body>
+</html>

@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: english-study
+    env: docker
+    plan: free
+    envVars:
+      - key: DB_DRIVER
+        value: ODBC Driver 17 for SQL Server
+      - key: DB_SERVER
+        sync: false
+      - key: DB_DATABASE
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_TRUSTED_CONNECTION
+        value: "0"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: FLASK_DEBUG
+        value: "0"

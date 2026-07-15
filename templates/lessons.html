@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Lesson - 영단어 공부방{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Lesson 관리</h1>
+</div>
+
+<div class="form-card" style="max-width:400px;margin-bottom:2rem">
+  <form method="post" action="{{ url_for('add_lesson') }}">
+    <div class="form-group">
+      <label>새 Lesson 이름</label>
+      <div style="display:flex;gap:0.5rem">
+        <input type="text" name="name" class="input" placeholder="예: Lesson1, Lesson2..." required>
+        <button type="submit" class="btn btn-primary">추가</button>
+      </div>
+    </div>
+  </form>
+</div>
+
+{% if lessons %}
+<div class="lesson-grid">
+  {% for lesson in lessons %}
+  <div class="lesson-card">
+    <div class="lesson-card-move">
+      <form method="post" action="{{ url_for('move_lesson', lesson_id=lesson.id, direction='up') }}" style="display:inline">
+        <button type="submit" class="btn-move" {% if loop.first %}disabled{% endif %} title="위로">▲</button>
+      </form>
+      <form method="post" action="{{ url_for('move_lesson', lesson_id=lesson.id, direction='down') }}" style="display:inline">
+        <button type="submit" class="btn-move" {% if loop.last %}disabled{% endif %} title="아래로">▼</button>
+      </form>
+    </div>
+    <a href="{{ url_for('lesson_detail', lesson_id=lesson.id) }}" class="lesson-card-link">
+      <div class="lesson-card-name">{{ lesson.name }}</div>
+      <div class="lesson-card-count">{{ lesson.word_count }}개 단어</div>
+    </a>
+    <form method="post" action="{{ url_for('delete_lesson', lesson_id=lesson.id) }}"
+          onsubmit="return confirm('Lesson을 삭제하면 단어들이 미분류로 변경됩니다. 계속할까요?')">
+      <button type="submit" class="btn btn-sm btn-danger">삭제</button>
+    </form>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state"><p>Lesson이 없습니다. 위에서 새 Lesson을 추가해보세요.</p></div>
+{% endif %}
+{% endblock %}

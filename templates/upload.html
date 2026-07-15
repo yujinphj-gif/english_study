@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}파일 업로드 - 영단어 공부방{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>파일로 단어장 만들기</h1>
+</div>
+
+<div class="form-card" style="max-width:500px">
+  <p style="margin-bottom:1rem;color:#6b7280;font-size:0.9rem">
+    PDF 또는 이미지(PNG, JPG) 파일에서 <strong style="color:#b45309">노란색으로 하이라이트</strong>된 영단어를 자동으로 추출합니다 (뜻/예문 자동 완성).<br>
+    엑셀(.xlsx) 파일은 <strong style="color:#b45309">단어/뜻/예문</strong> 열이 있는 표를 그대로 가져옵니다.
+  </p>
+  <form id="uploadForm">
+    <div class="form-group">
+      <label>PDF / 이미지 / 엑셀 파일</label>
+      <input type="file" name="pdf_file" id="pdfFile"
+             accept="application/pdf,image/png,image/jpeg,.xlsx,.xlsm" class="input" required>
+    </div>
+    <div class="form-group">
+      <label>추가할 Lesson</label>
+      <select name="lesson_id" id="lessonSelect" class="select">
+        <option value="">새 Lesson 만들기 (파일명 사용)</option>
+        {% for lesson in lessons %}
+        <option value="{{ lesson.id }}">{{ lesson.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div id="progressArea" style="display:none;margin-bottom:1.2rem">
+      <div class="progress-bar-track">
+        <div id="progressBarFill" class="progress-bar-fill" style="width:0%"></div>
+      </div>
+      <div id="progressStatus" class="progress-status">준비 중...</div>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary" id="uploadBtn">업로드하고 단어 추출</button>
+    </div>
+  </form>
+</div>
+
+<script>
+  const form = document.getElementById('uploadForm');
+  const uploadBtn = document.getElementById('uploadBtn');
+  const progressArea = document.getElementById('progressArea');
+  const progressBarFill = document.getElementById('progressBarFill');
+  const progressStatus = document.getElementById('progressStatus');
+
+  function setProgress(percent, statusText) {
+    progressBarFill.style.width = percent + '%';
+    progressStatus.textContent = statusText;
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const fileInput = document.getElementById('pdfFile');
+    if (!fileInput.files.length) return;
+
+    const file = fileInput.files[0];
+    const ext = file.name.split('.').pop().toLowerCase();
+    const isExcel = ext === 'xlsx' || ext === 'xlsm';
+
+    uploadBtn.disabled = true;
+    progressArea.style.display = 'block';
+    setProgress(0, isExcel ? '엑셀 파일 읽는 중...' : '파일에서 단어 추출 중...');
+
+    try {
+      const formData = new FormData();
+      formData.append('pdf_file', file);
+
+      const extractUrl = isExcel ? '/api/extract-excel' : '/api/extract-words';
+      const extractRes = await fetch(extractUrl, { method: 'POST', body: formData });
+      const extractData = await extractRes.json();
+      if (!extractRes.ok) {
+        alert(extractData.error || '단어 추출에 실패했습니다.');
+        return;
+      }
+
+      let results;
+      if (isExcel) {
+        results = extractData.entries;
+        for (let i = 0; i < results.length; i++) {
+          if (results[i].meaning) continue;
+          setProgress(
+            Math.round((i / results.length) * 100),
+            `뜻 조회 중... (${i + 1}/${results.length}) ${results[i].word}`
+          );
+          const lookupRes = await fetch(`/api/lookup?word=${encodeURIComponent(results[i].word)}`);
+          const lookupData = await lookupRes.json();
+          results[i].meaning = lookupData.meaning || '';
+          if (!results[i].example) results[i].example = lookupData.example || '';
+        }
+      } else {
+        const words = extractData.words;
+        results = [];
+        for (let i = 0; i < words.length; i++) {
+          const word = words[i];
+          setProgress(
+            Math.round((i / words.length) * 100),
+            `단어 조회 중... (${i + 1}/${words.length}) ${word}`
+          );
+          const lookupRes = await fetch(`/api/lookup?word=${encodeURIComponent(word)}`);
+          const lookupData = await lookupRes.json();
+          results.push({ word, meaning: lookupData.meaning || '', example: lookupData.example || '' });
+        }
+      }
+
+      setProgress(100, '저장 중...');
+
+      const lessonId = document.getElementById('lessonSelect').value;
+      const saveRes = await fetch('/api/save-words', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          lesson_id: lessonId,
+          lesson_name: extractData.default_lesson_name,
+          words: results
+        })
+      });
+      const saveData = await saveRes.json();
+      if (!saveRes.ok) {
+        alert(saveData.error || '저장에 실패했습니다.');
+        return;
+      }
+
+      let message = `'${saveData.lesson_name}' Lesson에 단어 ${saveData.added}개가 추가되었습니다!`;
+      if (saveData.skipped) message += ` (중복 단어 ${saveData.skipped}개는 제외)`;
+      setProgress(100, message);
+      window.location.href = '/words';
+    } catch (err) {
+      alert('처리 중 오류가 발생했습니다.');
+    } finally {
+      uploadBtn.disabled = false;
+    }
+  });
+</script>
+{% endblock %}

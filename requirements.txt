@@ -1,0 +1,11 @@
+flask==3.0.3
+pyodbc==5.1.0
+pymupdf==1.28.0
+deep-translator
+requests
+easyocr
+Pillow
+numpy
+openpyxl
+python-dotenv
+gunicorn
